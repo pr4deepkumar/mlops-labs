@@ -57,6 +57,22 @@ def fun4(x,y,z):
     total_sum = x + y + z
     return total_sum
 
+def fun5(x, y):
+    """
+    Divides two numbers.
+    Args:
+        x (int/float): First number.
+        y (int/float): Second number.
+    Returns:
+        int/float: Quotient of x and y.
+    Raises:
+        ValueError: If either x or y is not a number, or if y is zero.
+    """
+    if not (isinstance(x, (int, float)) and isinstance(y, (int, float))):
+        raise ValueError("Both inputs must be numbers.")
+    if y == 0:
+        raise ValueError("Cannot divide by zero.")
+    return x / y
 
 # f1_op = fun1(2,3)
 # f2_op = fun2(2,3)
