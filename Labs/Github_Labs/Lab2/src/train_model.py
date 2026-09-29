@@ -25,7 +25,7 @@ if __name__ == '__main__':
     
     # Check if the file exists within the folder
     X, y = make_classification(
-                            n_samples=random.randint(0, 2000),
+                            n_samples=random.randint(50, 2000), # from 0 to 50
                             n_features=6,
                             n_informative=3,
                             n_redundant=0,
@@ -80,5 +80,4 @@ if __name__ == '__main__':
         model_version = f'model_{timestamp}'  # Use a timestamp as the version
         model_filename = f'{model_version}_dt_model.joblib'
         dump(forest, model_filename)
-                    
-
+        
