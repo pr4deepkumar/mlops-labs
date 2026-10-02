@@ -1,5 +1,5 @@
 name: Testing Github Lab1 with Pytest
-run-name: Pytest
+run-name: Testing Github Lab1 with Pytest
 on:
   push:
     branches:

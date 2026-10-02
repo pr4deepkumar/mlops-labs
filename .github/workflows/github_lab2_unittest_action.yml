@@ -1,5 +1,5 @@
 name: Testing Github Lab1 Python Unittests
-
+run-name: Testing Github Lab1 Python Unittests
 on:
   push:
     branches:
