@@ -1,4 +1,5 @@
 name: Periodic Model Calibration - Ghithub Lab 2
+run-name: Periodic Model Calibration - Ghithub Lab 2
 
 on: 
   schedule:
