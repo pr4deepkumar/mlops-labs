@@ -1,3 +1,36 @@
+## Changes Made for Lab1 Assignment
+
+### `src/calculator.py`
+- Added a new division function `fun5(x, y)` that returns `x / y`.
+- Input validation: raises `ValueError` if either input is not an `int`/`float`.
+- Zero-division handling: raises `ValueError("Cannot divide by zero.")` when `y == 0`, instead of letting Python raise `ZeroDivisionError`.
+
+### `test/test_pytest.py`
+- Added `test_fun5()` covering positive, negative, and mixed-sign division.
+
+### `test/test_unittest.py`
+- Added `test_fun5()` with the same value checks as the pytest one and added error-case tests as well.
+
+### `workflows/github_lab1_pytest_action.yml`
+- Fixed the `run-nam` typo to `run-name`.
+- Removed `branches-ignore: dev`, because GitHub does not allow `branches` and `branches-ignore` on the same trigger.
+- Replaced the `label` and `issues` triggers, with a `pull_request` trigger on `main`. Tests now run on PRs before merge.
+- Upgraded the actions: `actions/checkout` v2 to v4, `actions/setup-python` v2 to v5 and `actions/upload-artifact` v2 to v4 (v2 is retired).
+- Upgraded Python 3.8 to 3.11.
+- Added `cache: pip` to speed up dependency installs.
+- Removed `continue-on-error: false`, since that is already the default.
+
+### `workflows/github_lab2_unittest_action.yml`
+- Added a `pull_request` trigger on `main`, so unit tests also run on PRs.
+- Upgraded the actions: `actions/checkout` v2 to v4 and `actions/setup-python` v2 to v5.
+- Upgraded Python 3.8 to 3.11.
+- Added `cache: pip` to speed up dependency installs.
+
+### `.github/workflows/` (repo root)
+- Applied the same changes to the root copies of both workflows, since GitHub Actions only runs workflows from the root `.github/workflows/` directory.
+
+With these changes, both test workflows run automatically on every push to `main` and on every pull request into `main`.
+
 # LAB1 - MLOps (IE-7374) 
 
 This lab focuses on 5 modules, which includes creating a virtual environment, creating a GitHub repository, creating Python files, creating test files using pytest and unittest, and implementing GitHub Actions.
