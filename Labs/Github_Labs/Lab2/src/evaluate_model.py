@@ -1,28 +1,27 @@
-import pickle, os, json, random
-from sklearn.metrics import f1_score
-import joblib, glob, sys
+import os, json, random
+import joblib
 import argparse
 from sklearn.datasets import make_classification
-
-sys.path.insert(0, os.path.abspath('..'))
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--timestamp", type=str, required=True, help="Timestamp from GitHub Actions")
     args = parser.parse_args()
-    
+
     # Access the timestamp
     timestamp = args.timestamp
+    model_version = f'model_{timestamp}_dt_model'  # Use a timestamp as the version
+    model_path = f'{model_version}.joblib'
     try:
-        model_version = f'model_{timestamp}_dt_model'  # Use a timestamp as the version
-        model = joblib.load(f'{model_version}.joblib')
-    except:
-        raise ValueError('Failed to catching the latest model')
-        
+        model = joblib.load(model_path)
+    except FileNotFoundError:
+        raise FileNotFoundError(f'Model file not found: {os.path.abspath(model_path)}')
+
     try:
-        # Check if the file exists within the folder
+        # Generate evaluation data with the same settings as training
         X, y = make_classification(
-                            n_samples=random.randint(0, 2000),
+                            n_samples=random.randint(50, 2000),  # changed to 50 to avoid an empty dataset
                             n_features=6,
                             n_informative=3,
                             n_redundant=0,
@@ -31,19 +30,17 @@ if __name__=='__main__':
                             random_state=0,
                             shuffle=True,
                         )
-    except:
-        raise ValueError('Failed to catching the data')
-    
-    y_predict = model.predict(X)
-    metrics = {"F1_Score":f1_score(y, y_predict)}
-    
-    # Save metrics to a JSON file
+    except ValueError as e:
+        raise ValueError(f'Failed to generate evaluation data: {e}')
 
-    if not os.path.exists('metrics/'): 
-        # then create it.
-        os.makedirs("metrics/")
-        
+    y_predict = model.predict(X)
+    y_proba = model.predict_proba(X)[:, 1]
+    metrics = {"F1_Score": f1_score(y, y_predict),
+               "Accuracy": accuracy_score(y, y_predict),
+               "Precision": precision_score(y, y_predict),
+               "Recall": recall_score(y, y_predict),
+               "ROC_AUC": roc_auc_score(y, y_proba)}
+
+    # Save metrics to a JSON file in the working directory; the workflow moves it into metrics/
     with open(f'{timestamp}_metrics.json', 'w') as metrics_file:
         json.dump(metrics, metrics_file, indent=4)
-               
-    

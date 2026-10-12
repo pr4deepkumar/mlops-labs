@@ -1,68 +1,77 @@
-name: Periodic Model Calibration - Ghithub Lab 2
-run-name: Periodic Model Calibration - Ghithub Lab 2
+name: Periodic Model Calibration - Github Lab 2
+run-name: Periodic Model Calibration - Github Lab 2
 
-on: 
+on:
   schedule:
-    - cron: '0 0 * * *' 
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: github-lab2-model-retraining  # Shared with the on-push workflow so only one run pushes at a time
+  cancel-in-progress: false
 
 jobs:
   retrain:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Labs/Github_Labs/Lab2  # run commands from the Lab2 folder
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-version: 3.9
+        python-version: "3.11"
+        cache: pip
+        cache-dependency-path: Labs/Github_Labs/Lab2/requirements.txt
 
     - name: Install dependencies
-      run: pip install -r Labs/Github_Labs/Lab2/requirements.txt
+      run: pip install -r requirements.txt
 
     - name: Generate and Store Timestamp
       run: |
         timestamp=$(date '+%Y%m%d%H%M%S')
         echo "$timestamp" > timestamp.txt
-      id: timestamp 
-
-    - name: Check File Permissions
-      run: |
-        ls -l Labs/Github_Labs/Lab2/src/train_model.py
-
-    - name: Set File Permissions
-      run: |
-        chmod +x Labs/Github_Labs/Lab2/src/train_model.py
+        echo "timestamp=$timestamp" >> $GITHUB_ENV
+      id: timestamp
 
     - name: Retrain Model
       run: |
-        timestamp=$(cat timestamp.txt) # Use the timestamp in your training script
-        python Labs/Github_Labs/Lab2/src/train_model.py --timestamp "$timestamp"
+        python src/train_model.py --timestamp "$timestamp"
 
     - name: Evaluate Model and Log Metrics
       run: |
-        timestamp=$(cat timestamp.txt) # Use the timestamp in your training script
-        python Labs/Github_Labs/Lab2/src/evaluate_model.py  --timestamp "$timestamp" # Assuming you have a script for model evaluation
+        python src/evaluate_model.py  --timestamp "$timestamp" # Assuming you have a script for model evaluation
         metrics_filename="${timestamp}_metrics.json"
-        mv $metrics_filename Labs/Github_Labs/Lab2/metrics/$metrics_filename
+        echo "metrics_filename=$metrics_filename" >> $GITHUB_ENV
+        mkdir -p metrics
+        mv $metrics_filename metrics/$metrics_filename
       continue-on-error: false  # Continue even if evaluation fails
 
     - name: Store and Version the New Model
       run: |
-        timestamp=$(cat timestamp.txt)
         model_filename="model_${timestamp}_dt_model.joblib"
-        mv $model_filename Labs/Github_Labs/Lab2/models/$model_filename
+        echo "model_filename=$model_filename" >> $GITHUB_ENV
+        mkdir -p models
+        mv $model_filename models/$model_filename
+
+    - name: Upload Model and Metrics
+      uses: actions/upload-artifact@v4
+      with:
+        name: lab2-model-${{ env.timestamp }}
+        path: |  # working-directory doesn't apply to "with:" paths
+          Labs/Github_Labs/Lab2/models/${{ env.model_filename }}
+          Labs/Github_Labs/Lab2/metrics/${{ env.metrics_filename }}
 
     - name: Commit and Push Changes
       run: |
-        git config --global user.email "26876927+raminmohammadi@users.noreply.github.com"
-        git config --global user.name "raminmohammadi"
-        git add Labs/Github_Labs/Lab2/metrics/$metrics_filename Labs/Github_Labs/Lab2/models/$model_filename
-        git commit -m "Add metrics and updated model"
+        git config --global user.email "41898292+github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"
+        git add -f metrics/$metrics_filename models/$model_filename
+        git commit -m "Add metrics and updated model for $timestamp"
         git push
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
-

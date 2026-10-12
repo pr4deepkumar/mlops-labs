@@ -1,3 +1,40 @@
+## Changes made for the Lab2 assignment
+
+### `src/train_model.py`
+- Simplified the folder setup for `data/` and `models/`. The old code repeated the same block twice, once for when the folder existed and once for when it didn't. Now it just creates the folder if it's missing.
+- Switched the file paths to `pathlib`.
+- Removed unused imports and commented-out code.
+- Logged more to MLflow: the random seed, the model's settings, and the trained model itself.
+
+### `src/evaluate_model.py`
+- Rewrote the error messages so it's easier to tell what went wrong when the model file is missing or the data can't be generated.
+- Fixed a bug where the evaluation data could end up with 0 samples and crash the script.
+- Added accuracy, precision, recall and ROC-AUC to the saved metrics, next to the F1 score.
+- Removed unused imports and a folder creation step the script didn't need.
+
+### `Lab2/workflows/model_calibration.yml`
+- Fixed a bug where the nightly run committed the model but skipped the metrics file without any warning.
+- Fixed the "Ghithub" typo in the workflow name.
+
+### `Lab2/workflows/model_calibration_on_push.yml`
+- Retraining now runs only when something in Lab2 changes, not on every push to `main`.
+
+### Both `Lab2/workflows`
+- Upgraded `actions/setup-python` from v4 to v5.
+- Upgraded Python from 3.9 to 3.11.
+- Added `cache: pip` to speed up dependency installs.
+- Set Lab2 as the working folder, so the commands no longer need the full path.
+- Removed the file permission steps. The script runs through `python`, so it doesn't need them.
+- Added the option to run the workflow manually from the Actions tab.
+- Stopped the nightly and on-push runs from pushing at the same time.
+- Each run also uploads the model and metrics as a downloadable artifact.
+- Commits now come from the GitHub Actions bot instead of a personal account.
+
+### `.github/workflows/` (repo root)
+- Applied the same changes to the root copies of both workflows, since GitHub Actions only runs workflows from the root `.github/workflows/` directory.
+
+The model now retrains whenever Lab2 changes on `main`, every night, and whenever triggered by hand, and every run saves both the model and its metrics.
+
 # Using GitHub Actions for Model Training and Versioning
 
 This repository demonstrates how to use GitHub Actions to automate the process of training a machine learning model, storing the model, and versioning it. This allows you to easily update and improve your model in a collaborative environment.
