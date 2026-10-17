@@ -68,7 +68,7 @@ jobs:
 
     - name: Commit and Push Changes
       run: |
-        git config --global user.email "41898292+github-actions[bot]@users.noreply.github.com"
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
         git add -f metrics/$metrics_filename models/$model_filename
         git commit -m "Add metrics and updated model for $timestamp"
