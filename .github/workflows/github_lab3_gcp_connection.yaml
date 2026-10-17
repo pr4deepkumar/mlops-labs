@@ -2,8 +2,8 @@ name: Train and save model to GCS # Define the name of the GitHub Actions workfl
 run-name: Train and save model to GCS # Define the name of the workflow run
 
 on:
-  schedule:
-    - cron: '0 0 * * *' # Run every day at midnight
+  # schedule:
+  #   - cron: '0 0 * * *' # Run every day at midnight
   workflow_dispatch: # Allow manual trigger of the workflow
 
 jobs:
