@@ -5,11 +5,15 @@
 - Switched the file paths to `pathlib`.
 - Removed unused imports and commented-out code.
 - Logged more to MLflow: the random seed, the model's settings, and the trained model itself.
+- Added model calibration. The random forest is now wrapped in `CalibratedClassifierCV`, so its predicted probabilities line up with how often each class really occurs. This is what the "model calibration" workflows were named for, but the original code never did it.
+- Set aside 20% of the data as a test set and saved it to `data/` for the evaluation step.
 
 ### `src/evaluate_model.py`
-- Rewrote the error messages so it's easier to tell what went wrong when the model file is missing or the data can't be generated.
-- Fixed a bug where the evaluation data could end up with 0 samples and crash the script.
-- Added accuracy, precision, recall and ROC-AUC to the saved metrics, next to the F1 score.
+- Rewrote the error messages so it's easier to tell what went wrong when the model file or the test data is missing.
+- Fixed the evaluation itself. The script used to generate a brand new dataset that didn't match what the model was trained on, so the scores were close to a coin flip (F1 around 0.4). It now scores the model on the held-out test set, and F1 is around 0.9.
+- Added accuracy, precision, recall, ROC-AUC and the Brier score (which checks how good the calibrated probabilities are) to the saved metrics, next to the F1 score.
+- Added a quality gate. If the F1 score is below 0.7, the script fails, which stops the workflow before the model gets committed. The limit can be changed with `--min-f1`.
+- Kept the older models and metrics files in `models/` and `metrics/` as part of the version history. Metrics saved before this fix show F1 around 0.4, and the ones saved after show around 0.9, so you can see what the fix changed.
 - Removed unused imports and a folder creation step the script didn't need.
 
 ### `Lab2/workflows/model_calibration.yml`
@@ -33,7 +37,7 @@
 ### `.github/workflows/` (repo root)
 - Applied the same changes to the root copies of both workflows, since GitHub Actions only runs workflows from the root `.github/workflows/` directory.
 
-The model now retrains whenever Lab2 changes on `main`, every night, and whenever triggered by hand, and every run saves both the model and its metrics.
+The model now retrains whenever Lab2 changes on `main`, every night, and whenever triggered by hand. Every run calibrates the model, tests it on data it hasn't seen, and only saves the model and its metrics if it passes the quality gate.
 
 # Using GitHub Actions for Model Training and Versioning
 
