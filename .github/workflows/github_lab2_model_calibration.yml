@@ -49,7 +49,7 @@ jobs:
         echo "metrics_filename=$metrics_filename" >> $GITHUB_ENV
         mkdir -p metrics
         mv $metrics_filename metrics/$metrics_filename
-      continue-on-error: false  # Continue even if evaluation fails
+      continue-on-error: false  # Stop the workflow if evaluation or the quality gate fails
 
     - name: Store and Version the New Model
       run: |
