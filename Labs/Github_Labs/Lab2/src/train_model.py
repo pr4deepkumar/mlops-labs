@@ -1,7 +1,7 @@
 import mlflow, mlflow.sklearn, datetime, pickle, random
 from pathlib import Path
 from joblib import dump
-from sklearn.datasets import make_classification
+from sklearn.datasets import load_breast_cancer
 from sklearn.metrics import accuracy_score, f1_score, brier_score_loss
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.calibration import CalibratedClassifierCV
@@ -22,17 +22,11 @@ if __name__ == '__main__':
     print(f"Timestamp received from GitHub Actions: {timestamp}")
     
     seed = 0
-    # Check if the file exists within the folder
-    X, y = make_classification(
-                            n_samples=random.randint(50, 2000), # changed to 50 to avoid an empty dataset
-                            n_features=6,
-                            n_informative=3,
-                            n_redundant=0,
-                            n_repeated=0,
-                            n_classes=2,
-                            random_state=seed,
-                            shuffle=True,
-                        )
+    # Load the Breast Cancer Wisconsin dataset
+    X, y = load_breast_cancer(return_X_y=True)
+    # Use a random 70-90% of the samples each run so every retrain gives a new model version
+    keep = random.sample(range(len(y)), int(len(y) * random.uniform(0.7, 0.9)))
+    X, y = X[keep], y[keep]
     # Hold out 20% of the data so evaluate_model.py scores the model on data it never saw
     X, X_test, y, y_test = train_test_split(X, y, test_size=0.2, random_state=seed, stratify=y)
     Path('data').mkdir(parents=True, exist_ok=True)
@@ -43,7 +37,7 @@ if __name__ == '__main__':
         pickle.dump(y_test, data)
             
     mlflow.set_tracking_uri("./mlruns")
-    dataset_name = "Reuters Corpus Volume"
+    dataset_name = "Breast Cancer Wisconsin"
     current_time = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
     experiment_name = f"{dataset_name}_{current_time}"    
     experiment_id = mlflow.create_experiment(f"{experiment_name}")

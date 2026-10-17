@@ -1,44 +1,44 @@
 ## Changes made for the Lab2 assignment
 
 ### `src/train_model.py`
-- Simplified the folder setup for `data/` and `models/`. The old code repeated the same block twice, once for when the folder existed and once for when it didn't. Now it just creates the folder if it's missing.
-- Switched the file paths to `pathlib`.
+- Switched from random data to scikit-learn's built-in Breast Cancer Wisconsin dataset. Each run trains on a random 70-90% of the samples, so every retrain still yields a new model version.
+- Renamed the MLflow dataset from "Reuters Corpus Volume" to "Breast Cancer Wisconsin", since the code never used Reuters data.
+- Simplified the `data/` and `models/` folder setup. Instead of repeating the same block for both cases, it now creates each folder only if it's missing.
+- Switched file paths to `pathlib`.
 - Removed unused imports and commented-out code.
-- Logged more to MLflow: the random seed, the model's settings, and the trained model itself.
-- Added model calibration. The random forest is now wrapped in `CalibratedClassifierCV`, so its predicted probabilities line up with how often each class really occurs. This is what the "model calibration" workflows were named for, but the original code never did it.
-- Set aside 20% of the data as a test set and saved it to `data/` for the evaluation step.
+- Logged the random seed, model settings, and trained model to MLflow.
+- Added calibration by wrapping the random forest in `CalibratedClassifierCV`, so predicted probabilities match how often each class actually occurs. The workflows were named "model calibration," but the original code never calibrated anything.
+- Held out 20% of the data as a test set and saved it to `data/` for evaluation.
 
 ### `src/evaluate_model.py`
-- Rewrote the error messages so it's easier to tell what went wrong when the model file or the test data is missing.
-- Fixed the evaluation itself. The script used to generate a brand new dataset that didn't match what the model was trained on, so the scores were close to a coin flip (F1 around 0.4). It now scores the model on the held-out test set, and F1 is around 0.9.
-- Added accuracy, precision, recall, ROC-AUC and the Brier score (which checks how good the calibrated probabilities are) to the saved metrics, next to the F1 score.
-- Added a quality gate. If the F1 score is below 0.7, the script fails, which stops the workflow before the model gets committed. The limit can be changed with `--min-f1`.
-- Kept the older models and metrics files in `models/` and `metrics/` as part of the version history. Metrics saved before this fix show F1 around 0.4, and the ones saved after show around 0.9, so you can see what the fix changed.
-- Removed unused imports and a folder creation step the script didn't need.
+- Clarified the error messages for a missing model file or test data.
+- Fixed the evaluation. The script generated a new dataset that didn't match the training data, so scores were near chance (F1 around 0.4). It now uses the held-out test set, and F1 is above 0.9.
+- Added accuracy, precision, recall, ROC-AUC, and the Brier score (a check on calibrated probabilities) to the saved metrics alongside F1.
+- Added a quality gate: if F1 drops below 0.7, the script fails and the workflow stops before committing the model. Adjust the threshold with `--min-f1`.
+- Kept older model and metrics files in `models/` and `metrics/` as version history, where the jump from F1 around 0.4 to above 0.9 shows the fix's effect.
+- Removed unused imports and an unneeded folder creation step.
 
 ### `Lab2/workflows/model_calibration.yml`
-- Fixed a bug where the nightly run committed the model but skipped the metrics file without any warning.
+- Fixed the nightly run silently skipping the metrics file when committing the model.
 - Fixed the "Ghithub" typo in the workflow name.
 
 ### `Lab2/workflows/model_calibration_on_push.yml`
-- Retraining now runs only when something in Lab2 changes, not on every push to `main`.
+- Retraining now runs only when Lab2 changes, not on every push to `main`.
 
 ### Both `Lab2/workflows`
-- Upgraded `actions/setup-python` from v4 to v5.
-- Upgraded Python from 3.9 to 3.11.
-- Added `cache: pip` to speed up dependency installs.
-- Set Lab2 as the working folder, so the commands no longer need the full path.
-- Removed the file permission steps. The script runs through `python`, so it doesn't need them.
-- Added the option to run the workflow manually from the Actions tab.
-- Stopped the nightly and on-push runs from pushing at the same time.
-- Each run also uploads the model and metrics as a downloadable artifact.
+- Upgraded `actions/setup-python` from v4 to v5 and Python from 3.9 to 3.11.
+- Added `cache: pip` for faster dependency installs.
+- Set Lab2 as the working directory, so commands no longer need full paths.
+- Removed the file permission steps, which aren't needed when the script runs through `python`.
+- Added a manual trigger in the Actions tab.
+- Prevented the nightly and on-push runs from pushing at the same time.
+- Each run uploads the model and metrics as a downloadable artifact.
 - Commits now come from the GitHub Actions bot instead of a personal account.
 
 ### `.github/workflows/` (repo root)
 - Applied the same changes to the root copies of both workflows, since GitHub Actions only runs workflows from the root `.github/workflows/` directory.
 
-The model now retrains whenever Lab2 changes on `main`, every night, and whenever triggered by hand. Every run calibrates the model, tests it on data it hasn't seen, and only saves the model and its metrics if it passes the quality gate.
-
+The model now retrains on Lab2 changes pushed to `main`, nightly, and on manual trigger. Each run calibrates the model, tests it on unseen data, and saves the model and metrics only if it passes the quality gate.
 # Using GitHub Actions for Model Training and Versioning
 
 This repository demonstrates how to use GitHub Actions to automate the process of training a machine learning model, storing the model, and versioning it. This allows you to easily update and improve your model in a collaborative environment.
