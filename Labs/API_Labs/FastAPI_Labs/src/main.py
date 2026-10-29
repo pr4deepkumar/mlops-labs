@@ -1,27 +1,38 @@
 from fastapi import FastAPI, status, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from predict import predict_data
 
 
-app = FastAPI()
+app = FastAPI(title="Wine Classifier API")
 
-class IrisData(BaseModel):
+CLASS_NAMES = ["cultivar_0", "cultivar_1", "cultivar_2"]
+
+class WineData(BaseModel):
     """
-    Pydantic BaseModel representing iris flower measurements.
+    Pydantic BaseModel representing wine chemical measurements.
 
     Attributes:
-        petal_length (float): The length of the iris flower's petal in centimeters.
-        sepal_length (float): The length of the iris flower's sepal in centimeters.
-        petal_width (float): The width of the iris flower's petal in centimeters.
-        sepal_width (float): The width of the iris flower's sepal in centimeters.
+        The 13 measurements of the wine, in the same order as the training data.
+        Each must be greater than 0 (gt=0), and the example values fill in the /docs page.
     """
-    petal_length: float
-    sepal_length: float
-    petal_width: float
-    sepal_width: float
+    alcohol: float = Field(gt=0, examples=[13.2])
+    malic_acid: float = Field(gt=0, examples=[1.78])
+    ash: float = Field(gt=0, examples=[2.14])
+    alcalinity_of_ash: float = Field(gt=0, examples=[11.2])
+    magnesium: float = Field(gt=0, examples=[100])
+    total_phenols: float = Field(gt=0, examples=[2.65])
+    flavanoids: float = Field(gt=0, examples=[2.76])
+    nonflavanoid_phenols: float = Field(gt=0, examples=[0.26])
+    proanthocyanins: float = Field(gt=0, examples=[1.28])
+    color_intensity: float = Field(gt=0, examples=[4.38])
+    hue: float = Field(gt=0, examples=[1.05])
+    od280_od315_of_diluted_wines: float = Field(gt=0, examples=[3.4])
+    proline: float = Field(gt=0, examples=[1050])
 
-class IrisResponse(BaseModel):
+class WineResponse(BaseModel):
     response:int
+    class_name:str
+    confidence:float
 
 
 
@@ -34,41 +45,42 @@ async def health_ping():
     """Concurrent (multiple tasks can run simultaneously)"""
     return {"status": "healthy"}
 
-@app.post("/predict", response_model=IrisResponse)
-async def predict_iris(iris_features: IrisData):
+@app.post("/predict", response_model=WineResponse)
+async def predict_wine(wine_features: WineData):
     """
-    Predict the iris flower species based on provided features.
-    This endpoint accepts iris flower measurements and returns the predicted species class.
+    Predict the wine cultivar based on provided features.
+    This endpoint accepts wine chemical measurements and returns the predicted cultivar class.
     Args:
-        iris_features (IrisData): An IrisData object containing:
-            - sepal_length (float): Length of the sepal in cm
-            - sepal_width (float): Width of the sepal in cm
-            - petal_length (float): Length of the petal in cm
-            - petal_width (float): Width of the petal in cm
+        wine_features (WineData): A WineData object containing:
+            - the 13 measurements (alcohol, malic_acid, ..., proline), all greater than 0
     Returns:
-        IrisResponse: A response object containing:
-            - response (int): The predicted iris species class (0, 1, or 2)
+        WineResponse: A response object containing:
+            - response (int): The predicted cultivar class (0, 1, or 2)
+            - class_name (str): The name of the predicted cultivar
+            - confidence (float): The model's probability for that class
     Raises:
         HTTPException: Returns a 500 status code with error details if prediction fails.
     Example:
         POST /predict
         {
-            "sepal_length": 5.1,
-            "sepal_width": 3.5,
-            "petal_length": 1.4,
-            "petal_width": 0.2
+            "alcohol": 13.2,
+            "malic_acid": 1.78,
+            ...
+            "proline": 1050
         }
         Response:
         {
-            "response": 0
+            "response": 0,
+            "class_name": "cultivar_0",
+            "confidence": 0.986
         }
     """
     try:
-        features = [[iris_features.sepal_length, iris_features.sepal_width,
-                    iris_features.petal_length, iris_features.petal_width]]
+        features = [list(wine_features.model_dump().values())]
 
-        prediction = predict_data(features)
-        return IrisResponse(response=int(prediction[0]))
+        prediction, confidence = predict_data(features)
+        return WineResponse(response=int(prediction[0]), class_name=CLASS_NAMES[int(prediction[0])],
+                            confidence=round(float(confidence[0]), 3))
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

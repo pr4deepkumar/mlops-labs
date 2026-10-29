@@ -1,4 +1,8 @@
 import joblib
+from pathlib import Path
+
+# Load the model once when the API starts, instead of on every request
+model = joblib.load(Path(__file__).parent.parent / "model" / "wine_model.pkl")
 
 def predict_data(X):
     """
@@ -7,7 +11,8 @@ def predict_data(X):
         X (numpy.ndarray): Input data for which predictions are to be made.
     Returns:
         y_pred (numpy.ndarray): Predicted class labels.
+        confidence (numpy.ndarray): Probability of the predicted class.
     """
-    model = joblib.load("../model/iris_model.pkl")
     y_pred = model.predict(X)
-    return y_pred
+    confidence = model.predict_proba(X).max(axis=1)
+    return y_pred, confidence

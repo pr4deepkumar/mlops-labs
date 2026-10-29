@@ -1,5 +1,29 @@
+## Changes made for the FastAPI lab assignment
+
+### `src/data.py`
+- Switched from the Iris dataset to scikit-learn's built-in Wine dataset: 178 wines from 3 cultivars, with 13 chemical measurements each.
+- The train/test split is now stratified, so each cultivar appears in the same proportion in both sets.
+
+### `src/train.py`
+- Replaced the Decision Tree with a Random Forest (100 trees, max depth 5).
+- Training now prints test set accuracy. The original code split off a test set and never used it.
+- The model is saved as `model/wine_model.pkl` instead of `iris_model.pkl`.
+
+### `src/predict.py`
+- The model loads once when the API starts. Before, it was read from disk on every request.
+- The model path is built from the file's own location, so the API still works when started from a different folder.
+- Predictions also return the model's confidence, which is the probability of the predicted class.
+
+### `src/main.py`
+- Replaced the Iris input with a `WineData` model for the 13 wine measurements. Every field must be a positive number, so something like a negative alcohol value returns a 422 error with a clear message instead of a wrong prediction.
+- Added an example request to the API docs, so "Try it out" on `/docs` works without typing in 13 values by hand.
+- The `/predict` response now includes the cultivar name and the confidence along with the class number.
+- The API has a title, "Wine Classifier API," which appears on the docs page.
+
+The lab instructions below are the originals and still mention the Iris dataset and the Decision Tree. To run this version, go to the `src/` folder, train with `python train.py`, and serve with `uvicorn main:app --reload`.
 
 ---
+
 - Video Explanation: [FastAPI lab](https://www.youtube.com/watch?v=KReburHqRIQ&list=PLcS4TrUUc53LeKBIyXAaERFKBJ3dvc9GZ&index=4)
 - Blog: [FastAPI Lab-1](https://www.mlwithramin.com/blog/fastapi-lab1)
 
