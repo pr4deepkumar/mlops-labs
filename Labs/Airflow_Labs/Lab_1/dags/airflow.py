@@ -3,7 +3,7 @@ from airflow import DAG
 # from airflow.operators.python import PythonOperator
 from airflow.providers.standard.operators.python import PythonOperator
 from datetime import datetime, timedelta
-from src.lab import load_data, data_preprocessing, build_save_model, load_model_elbow
+from src.lab import load_data, data_preprocessing, build_save_model, load_model_elbow, summarize_clusters
 
 # NOTE:
 # In Airflow 3.x, enabling XCom pickling should be done via environment variable:
@@ -22,7 +22,7 @@ default_args = {
 with DAG(
     'Airflow_Lab1',
     default_args=default_args,
-    description='Dag example for Lab 1 of Airflow series',
+    description='Clusters wholesale customers by yearly spending (Lab 1 of Airflow series)',
     catchup=False, 
 ) as dag:
 
@@ -53,8 +53,15 @@ with DAG(
         op_args=["model.sav", build_save_model_task.output],
     )
 
-    # Set task dependencies
-    load_data_task >> data_preprocessing_task >> build_save_model_task >> load_model_task
+    # Task to summarize each cluster's size and average spending, runs alongside 'load_model_task'
+    cluster_summary_task = PythonOperator(
+        task_id='cluster_summary_task',
+        python_callable=summarize_clusters,
+        op_args=[load_data_task.output, "model.sav"],
+    )
+
+    # Set task dependencies (the last two tasks run in parallel)
+    load_data_task >> data_preprocessing_task >> build_save_model_task >> [load_model_task, cluster_summary_task]
 
 # If this script is run directly, allow command-line interaction with the DAG
 if __name__ == "__main__":

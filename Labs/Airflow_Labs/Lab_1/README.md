@@ -1,3 +1,37 @@
+## Changes made for the Airflow Lab 1 assignment
+
+### `dags/data/`
+- Switched from the credit card dataset to the [Wholesale Customers dataset](https://archive.ics.uci.edu/dataset/292/wholesale+customers) from the UCI Machine Learning Repository (CC BY 4.0). It covers 440 customers of a wholesale distributor and their yearly spending in six product categories (Fresh, Milk, Grocery, Frozen, Detergents_Paper, Delicassen).
+- `file.csv` holds 439 customers for training, and `test.csv` holds the remaining one, so the final prediction is made on a customer the model never saw.
+
+### `dags/src/lab.py`
+- Clusters customers on all six spending categories. Spending is heavily skewed (in each category, the biggest customer spends 13 to 50 times as much as a typical one), so the values are log-transformed before scaling.
+- Fixed a bug where the elbow method's result was never used. The saved model always came from the last loop iteration, with 49 clusters. The model is now refit with the number of clusters the elbow method picks (9 for this data).
+- Fixed a bug where the test data was never scaled. The model was trained on data scaled to the range 0 to 1 but asked to predict on raw values. The fitted scaler is now saved with the model, and the test customer goes through the same log and scaling steps.
+- Added a `summarize_clusters` function that prints each cluster's size and its average yearly spending per category, which makes it possible to tell what kind of customer each cluster represents.
+
+### `dags/airflow.py`
+- Added a `cluster_summary_task` that runs `summarize_clusters`. Once the model is built, it runs in parallel with `load_model_task`, so the DAG now ends in two branches.
+- Updated the DAG description.
+
+In a test run on Airflow 3.3.2, all 5 tasks finished successfully, and the held-out customer was assigned to cluster 3.
+
+The instructions below fetch the docker-compose file for Airflow 2.5.1, but this DAG uses Airflow 3 imports. To run this version with Airflow 3.3.2, run these commands from this folder:
+
+```bash
+curl -LfO 'https://airflow.apache.org/docs/apache-airflow/3.3.2/docker-compose.yaml'
+# In docker-compose.yaml, set AIRFLOW__CORE__LOAD_EXAMPLES: 'false' (as in step 2.d below)
+echo "AIRFLOW_UID=$(id -u)" > .env
+echo "_PIP_ADDITIONAL_REQUIREMENTS=kneed==0.9.0 scikit-learn==1.9.1" >> .env
+mkdir -p ./logs ./plugins
+docker compose up airflow-init
+docker compose up -d
+```
+
+Then open http://localhost:8080, log in with `airflow` / `airflow`, and unpause and trigger `Airflow_Lab1`.
+
+---
+
 # Airflow lab
 
 - In order to install Airflow using docker you can watch our [Airflow Lab1 Tutorial Video](https://youtu.be/exFSeGUbn4Q?feature=shared)
